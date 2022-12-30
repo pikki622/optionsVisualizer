@@ -51,45 +51,49 @@ def toT(bid, ask, expiry):
     price = (bid+ask)/2.0
     expiry = expiry.to_numpy()
     expDay = expiry.astype('datetime64', copy=False)
-    T = (np.busday_count(np.datetime64('today'), expDay, holidays=nyse.holidays().holidays)+2)/daysInYear
-    return T
+    return (
+        np.busday_count(
+            np.datetime64('today'), expDay, holidays=nyse.holidays().holidays
+        )
+        + 2
+    ) / daysInYear
 
 def get_surf(ticker, otype):
-   tick = yf.Ticker(ticker)
-   underlying = (tick.info['bid'] + tick.info['ask'])/2
-   dates = list(tick.options)
-   nyse = mcal.get_calendar('NYSE')
-   for i in dates:
-       if np.busday_count(np.datetime64('today'), np.datetime64(i), holidays=nyse.holidays().holidays) < 2:
-           dates.remove(i)
+    tick = yf.Ticker(ticker)
+    underlying = (tick.info['bid'] + tick.info['ask'])/2
+    dates = list(tick.options)
+    nyse = mcal.get_calendar('NYSE')
+    for i in dates:
+        if np.busday_count(np.datetime64('today'), np.datetime64(i), holidays=nyse.holidays().holidays) < 2:
+            dates.remove(i)
 
-   ran = 0
-   for d in dates:
-       if ran == 0:
-           if otype == 'Put':
-               q = tick.option_chain(d).puts
-           elif otype == 'Call':
-               q = tick.option_chain(d).calls
-           q.insert(14, 'expiry', [d for i in range(len(q.index))])
-           q = q[q['volume'] >= 10]
-           ran = 1
-       else:
-           if otype == 'Put':
-               temp = tick.option_chain(d).puts
-           elif otype == 'Call':
-               temp = tick.option_chain(d).calls
-           temp.insert(14, 'expiry', [d for i in range(len(temp.index))])
-           temp = temp[temp['volume'] >= 10]
-           q = q.append(temp)
-   q['expiry'] = toT(q['bid'], q['ask'], q['expiry'])
-   q = q[['expiry', 'strike', 'impliedVolatility']]
-   q = q[q['expiry'] < 0.25]
-   q = q[(q['strike'].astype('float') > underlying * 0.5) & (q['strike'].astype('float') < underlying * 1.5)]
-   vals = q.to_numpy().T
-   vals = vals.astype(np.float64)
-   fig = plt.figure()
-   ax = Axes3D(fig, azim = 170, elev = 40)
-   mesh_plot2(vals[0],vals[1],vals[2], len(set(q['expiry'])),fig, ax, ticker + ' ' + otype + ' Volatility Surface')
+    ran = 0
+    for d in dates:
+        if ran == 0:
+            if otype == 'Put':
+                q = tick.option_chain(d).puts
+            elif otype == 'Call':
+                q = tick.option_chain(d).calls
+            q.insert(14, 'expiry', [d for _ in range(len(q.index))])
+            q = q[q['volume'] >= 10]
+            ran = 1
+        else:
+            if otype == 'Put':
+                temp = tick.option_chain(d).puts
+            elif otype == 'Call':
+                temp = tick.option_chain(d).calls
+            temp.insert(14, 'expiry', [d for _ in range(len(temp.index))])
+            temp = temp[temp['volume'] >= 10]
+            q = q.append(temp)
+    q['expiry'] = toT(q['bid'], q['ask'], q['expiry'])
+    q = q[['expiry', 'strike', 'impliedVolatility']]
+    q = q[q['expiry'] < 0.25]
+    q = q[(q['strike'].astype('float') > underlying * 0.5) & (q['strike'].astype('float') < underlying * 1.5)]
+    vals = q.to_numpy().T
+    vals = vals.astype(np.float64)
+    fig = plt.figure()
+    ax = Axes3D(fig, azim = 170, elev = 40)
+    mesh_plot2(vals[0],vals[1],vals[2], len(set(q['expiry'])),fig, ax, ticker + ' ' + otype + ' Volatility Surface')
 
 def make_surf(X,Y,Z,nDates):
    XX,YY = meshgrid(linspace(min(X),max(X),nDates),linspace(min(Y),max(Y),int(max(Y)-min(Y))))

@@ -176,11 +176,11 @@ class option():
         if len(toSweep) == 3:
             out = np.meshgrid(list(vectors.values())[0], list(vectors.values())[1], list(vectors.values())[2])
         grids = dict([(k, out[i]) for i, k in enumerate(vectors)])
-        combined = {**grids, **scalars}
-        
+        combined = grids | scalars
+
         data = (combined['S0'], combined['K'], combined['vol'], combined['r'], combined['T'], combined['q'])
         out = {}
-        
+
         if 'price' in toGrab: out['price'] = self.price(*data)
         if 'delta' in toGrab: out['delta'] = self.delta(*data)
         if 'vega' in toGrab: out['vega'] = self.vega(*data)
@@ -198,5 +198,5 @@ class option():
         if 'ultima' in toGrab: out['ultima'] = self.ultima(*data)
         if 'dualDelta' in toGrab: out['dualDelta'] = self.dualDelta(*data)
         if 'dualGamma' in toGrab: out['dualGamma'] = self.dualGamma(*data)
-        
+
         return {**combined, **out, **{'ls': self.ls}}

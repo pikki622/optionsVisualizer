@@ -174,7 +174,7 @@ class BlackScholesUI(QDialog):
             
     def updateOptionsDisplay(self):
         for i, opt in enumerate(self.optionsList):
-            self.optionsTable.setItem(i+1, 0, QTableWidgetItem(opt.ls + ' ' + opt.otype))
+            self.optionsTable.setItem(i+1, 0, QTableWidgetItem(f'{opt.ls} {opt.otype}'))
             self.optionsTable.setItem(i+1, 1, QTableWidgetItem(str(opt.K)))
             self.optionsTable.setItem(i+1, 2, QTableWidgetItem(opt.expDayStr))
             self.optionsTable.setItem(i+1, 3, QTableWidgetItem(str(opt.S0)))
@@ -342,11 +342,10 @@ class BlackScholesUI(QDialog):
                     price=outs[0]['price']
                 elif outs[0]['ls'] == 'Short':
                     price= -outs[0]['price']
-            else:
-                if outs[i]['ls'] == 'Long':
-                    price+=outs[i]['price']
-                elif outs[i]['ls'] == 'Short':
-                    price-=outs[i]['price']
+            elif outs[i]['ls'] == 'Long':
+                price+=outs[i]['price']
+            elif outs[i]['ls'] == 'Short':
+                price-=outs[i]['price']
         return price
     
     def sweepInput(self):
@@ -421,7 +420,7 @@ class BlackScholesUI(QDialog):
             max2 = float(self.max2.text())
             steps2 = int(self.steps2.text())
             toSweep[is2] = (min2, max2, steps2)
-        if len(toSweep) == 0:
+        if not toSweep:
             msgBox = QMessageBox()
             msgBox.setIcon(QMessageBox.Information)
             msgBox.setWindowTitle("Error")
